@@ -1,26 +1,19 @@
 package umm3601.todo;
 
-import static com.mongodb.client.model.Filters.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -29,14 +22,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
@@ -49,14 +39,6 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
-import io.javalin.json.JavalinJackson;
-import io.javalin.validation.BodyValidator;
-import io.javalin.validation.Validation;
-import io.javalin.validation.ValidationError;
-import io.javalin.validation.ValidationException;
-import io.javalin.validation.Validator;
-import umm3601.todo.TodoByCompany;
-import umm3601.todo.TodoController;
 
 /**
  * Tests the logic of the TodoController
@@ -87,9 +69,6 @@ class TodoControllerSpec {
   // for all the tests in this spec file.
   private static MongoClient mongoClient;
   private static MongoDatabase db;
-
-  // Used to translate between JSON and POJOs.
-  private static JavalinJackson javalinJackson = new JavalinJackson();
 
   @Mock
   private Context ctx;
@@ -142,52 +121,39 @@ class TodoControllerSpec {
     List<Document> testTodos = new ArrayList<>();
     testTodos.add(
         new Document()
-            .append("name", "Chris")
-            .append("age", 25)
-            .append("company", "UMM")
-            .append("email", "chris@this.that")
-            .append("role", "admin")
-            .append("avatar", "https://gravatar.com/avatar/8c9616d6cc5de638ea6920fb5d65fc6c?d=identicon"));
+            .append("owner", "Barry")
+            .append("status", false)
+            .append("body",
+            "Deserunt velit reprehenderit deserunt sunt excepteur sit eu eiusmod in voluptate aute minim mollit.")
+            .append("category", "homework"));
     testTodos.add(
-        new Document()
-            .append("name", "Pat")
-            .append("age", 37)
-            .append("company", "IBM")
-            .append("email", "pat@something.com")
-            .append("role", "editor")
-            .append("avatar", "https://gravatar.com/avatar/b42a11826c3bde672bce7e06ad729d44?d=identicon"));
+      new Document()
+          .append("owner", "Fry")
+          .append("status", false)
+          .append("body",
+          "Sunt esse dolore sunt Lorem velit reprehenderit incididunt minim Lorem sint Lorem sit voluptate proident.")
+          .append("category", "homework"));
     testTodos.add(
-        new Document()
-            .append("name", "Jamie")
-            .append("age", 37)
-            .append("company", "OHMNET")
-            .append("email", "jamie@frogs.com")
-            .append("role", "viewer")
-            .append("avatar", "https://gravatar.com/avatar/d4a6c71dd9470ad4cf58f78c100258bf?d=identicon"));
+      new Document()
+          .append("owner", "Dawn")
+          .append("status", true)
+          .append("body",
+          "Est ullamco consequat consectetur velit dolor qui pariatur proident dolor commodo ex.")
+          .append("category", "groceries"));
 
     samsId = new ObjectId();
     Document sam = new Document()
         .append("_id", samsId)
-        .append("name", "Sam")
-        .append("age", 45)
-        .append("company", "OHMNET")
-        .append("email", "sam@frogs.com")
-        .append("role", "viewer")
-        .append("avatar", "https://gravatar.com/avatar/08b7610b558a4cbbd20ae99072801f4d?d=identicon");
+        .append("owner", "Sam")
+        .append("status", false)
+        .append("body",
+        "In velit adipisicing ea in in consequat. Deserunt id deserunt minim quis reprehenderit et dolore.")
+        .append("category", "video games");
 
     todoDocuments.insertMany(testTodos);
     todoDocuments.insertOne(sam);
 
     todoController = new TodoController(db);
-  }
-
-  @Test
-  void addsRoutes() {
-    Javalin mockServer = mock(Javalin.class);
-    todoController.addRoutes(mockServer);
-    verify(mockServer, Mockito.atLeast(3)).get(any(), any());
-    verify(mockServer, Mockito.atLeastOnce()).post(any(), any());
-    verify(mockServer, Mockito.atLeastOnce()).delete(any(), any());
   }
 
   @Test
@@ -197,264 +163,227 @@ class TodoControllerSpec {
     // this case where we want all todos).
     when(ctx.queryParamMap()).thenReturn(Collections.emptyMap());
 
-    // Now, go ahead and ask the todoController to gettodos
+    // Now, go ahead and ask the todoController to getTodos
     // (which will, indeed, ask the context for its queryParamMap)
     todoController.getTodos(ctx);
 
     // We are going to capture an argument to a function, and the type of
-    // that argument will be of type ArrayList<todo> (we said so earlier
+    // that argument will be of type ArrayList<Todo> (we said so earlier
     // using a Mockito annotation like this):
     // @Captor
-    // private ArgumentCaptor<ArrayList<todo>> todoArrayListCaptor;
+    // private ArgumentCaptor<ArrayList<Todo>> todoArrayListCaptor;
     // We only want to declare that captor once and let the annotation
     // help us accomplish reassignment of the value for the captor
     // We reset the values of our annotated declarations using the command
     // `MockitoAnnotations.openMocks(this);` in our @BeforeEach
 
-    // Specifically, we want to pay attention to the ArrayList<todo> that
+    // Specifically, we want to pay attention to the ArrayList<Todo> that
     // is passed as input when ctx.json is called --- what is the argument
     // that was passed? We capture it and can refer to it later.
     verify(ctx).json(todoArrayListCaptor.capture());
     verify(ctx).status(HttpStatus.OK);
 
     // Check that the database collection holds the same number of documents
-    // as the size of the captured List<todo>
+    // as the size of the captured List<Todo>
     assertEquals(
         db.getCollection("todos").countDocuments(),
         todoArrayListCaptor.getValue().size());
   }
 
-  /**
-   * Confirm that if we process a request for todos with age 37,
-   * that all returned todos have that age, and we get the correct
-   * number of todos.
-   *
-   * The structure of this test is:
-   *
-   *    - We create a `Map` for the request's `queryParams`, that
-   *      contains a single entry, mapping the `AGE_KEY` to the
-   *      target value ("37"). This "tells" our `todoController`
-   *      that we want all the `todo`s that have age 37.
-   *    - We create a validator that confirms that the code
-   *      we're testing calls `ctx.queryParamsAsClass("age", Integer.class)`,
-   *      i.e., it asks for the value in the query param map
-   *      associated with the key `"age"`, interpreted as an Integer.
-   *      That call needs to return a value of type `Validator<Integer>`
-   *      that will succeed and return the (integer) value `37` associated
-   *      with the (`String`) parameter value `"37"`.
-   *    - We then call `todoController.gettodos(ctx)` to run the code
-   *      being tested with the constructed context `ctx`.
-   *    - We also use the `todoListArrayCaptor` (defined above)
-   *      to capture the `ArrayList<todo>` that the code under test
-   *      passes to `ctx.json(…)`. We can then confirm that the
-   *      correct list of todos (i.e., all the todos with age 37)
-   *      is passed in to be returned in the context.
-   *    - Now we can use a variety of assertions to confirm that
-   *      the code under test did the "right" thing:
-   *       - Confirm that the list of todos has length 2
-   *       - Confirm that each todo in the list has age 37
-   *       - Confirm that their names are "Jamie" and "Pat"
-   *
-   * @throws IOException
-   */
   @Test
-  void canGetTodosWithAge37() throws IOException {
-    // We'll need both `String` and `Integer` representations of
-    // the target age, so I'm defining both here.
-    Integer targetAge = 37;
-    String targetAgeString = targetAge.toString();
-
-    // Create a `Map` for the `queryParams` that will "return" the string
-    // "37" if you ask for the value associated with the `AGE_KEY`.
+  void canGetTodosWithCategory() throws IOException {
     Map<String, List<String>> queryParams = new HashMap<>();
-
-    queryParams.put(TodoController.AGE_KEY, Arrays.asList(new String[] {targetAgeString}));
-    // When the code being tested calls `ctx.queryParamMap()` return the
-    // the `queryParams` map we just built.
+    queryParams.put(TodoController.CATEGORY_KEY, Arrays.asList(new String[] {"groceries"}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"desc"}));
     when(ctx.queryParamMap()).thenReturn(queryParams);
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `targetAgeString`.
-    when(ctx.queryParam(TodoController.AGE_KEY)).thenReturn(targetAgeString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the integer value 37.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(TodoController.AGE_KEY, Integer.class, targetAgeString);
-    // When the code being tested calls `ctx.queryParamAsClass("age", Integer.class)`
-    // we'll return the `Validator` we just constructed.
-    when(ctx.queryParamAsClass(TodoController.AGE_KEY, Integer.class))
-        .thenReturn(validator);
+    when(ctx.queryParam(TodoController.CATEGORY_KEY)).thenReturn("groceries");
+    when(ctx.queryParam("sortorder")).thenReturn("desc");
 
     todoController.getTodos(ctx);
 
-    // Confirm that the code being tested calls `ctx.json(…)`, and capture whatever
-    // is passed in as the argument when `ctx.json()` is called.
     verify(ctx).json(todoArrayListCaptor.capture());
-    // Confirm that the code under test calls `ctx.status(HttpStatus.OK)` is called.
     verify(ctx).status(HttpStatus.OK);
 
-    // Confirm that we get back two todos.
-    assertEquals(2, todoArrayListCaptor.getValue().size());
-    // Confirm that both todos have age 37.
     for (Todo todo : todoArrayListCaptor.getValue()) {
-      assertEquals(targetAge, todo.age);
+      assertEquals("groceries", todo.category);
     }
-    // Generate a list of the names of the returned todos.
-    List<String> names = todoArrayListCaptor.getValue().stream().map(todo -> todo.name).collect(Collectors.toList());
-    // Confirm that the returned `names` contain the two names of the
-    // 37-year-olds.
-    assertTrue(names.contains("Jamie"));
-    assertTrue(names.contains("Pat"));
   }
 
-  /**
-   * Confirm that if we process a request for todos with age 37,
-   * that all returned todos have that age, and we get the correct
-   * number of todos.
-   *
-   * Instead of using the Captor like in many other tests, in this test
-   * we use an ArgumentMatcher just to show how that can be used, illustrating
-   * another way to test the same thing.
-   *
-   * An `ArgumentMatcher` has a method `matches` that returns `true`
-   * if the argument passed to `ctx.json(…)` (a `List<todo>` in this case)
-   * has the desired properties.
-   *
-   * This is probably overkill here, but it does illustrate a different
-   * approach to writing tests.
-   *
-   * @throws JsonMappingException
-   * @throws JsonProcessingException
-   */
   @Test
-  void canGetTodosWithAge37Redux() throws JsonMappingException, JsonProcessingException {
-    // We'll need both `String` and `Integer` representations of
-    // the target age, so I'm defining both here.
-    Integer targetAge = 37;
-    String targetAgeString = targetAge.toString();
+  void canGetTodosWithOwner() throws IOException {
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(TodoController.OWNER_KEY, Arrays.asList(new String[] {"Barry"}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"desc"}));
+    when(ctx.queryParamMap()).thenReturn(queryParams);
+    when(ctx.queryParam(TodoController.OWNER_KEY)).thenReturn("Barry");
+    when(ctx.queryParam("sortorder")).thenReturn("desc");
 
-    // When the controller calls `ctx.queryParamMap`, return the expected map for an
-    // "?age=37" query.
-    when(ctx.queryParamMap()).thenReturn(Map.of(TodoController.AGE_KEY, List.of(targetAgeString)));
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `targetAgeString`.
-    when(ctx.queryParam(TodoController.AGE_KEY)).thenReturn(targetAgeString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the integer value 37.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(TodoController.AGE_KEY, Integer.class, targetAgeString);
-    when(ctx.queryParamAsClass(TodoController.AGE_KEY, Integer.class)).thenReturn(validator);
-
-    // Call the method under test.
     todoController.getTodos(ctx);
 
-    // Verify that `getTodos` included a call to `ctx.status(HttpStatus.OK)` at some
-    // point.
+    verify(ctx).json(todoArrayListCaptor.capture());
     verify(ctx).status(HttpStatus.OK);
 
-    // Verify that `ctx.json()` is called with a `List` of `Todo`s.
-    // Each of those `Todo`s should have age 37.
-    verify(ctx).json(argThat(new ArgumentMatcher<List<Todo>>() {
-      @Override
-      public boolean matches(List<Todo> todos) {
-        for (Todo todo : todos) {
-          assertEquals(targetAge, todo.age);
-        }
-        assertEquals(2, todos.size());
-        return true;
-      }
-    }));
+    for (Todo todo : todoArrayListCaptor.getValue()) {
+      assertEquals("Barry", todo.owner);
+    }
   }
 
-  /**
-   * Test that if the todo sends a request with an illegal value in
-   * the age field (i.e., something that can't be parsed to a number)
-   * we get a reasonable error back.
-   */
   @Test
-  void respondsAppropriatelyToNonNumericAge() {
+  void canGetTodosWithStatusTrue() throws IOException {
     Map<String, List<String>> queryParams = new HashMap<>();
-    String illegalIntegerString = "bad integer string";
-    queryParams.put(TodoController.AGE_KEY, Arrays.asList(new String[] {illegalIntegerString}));
+    queryParams.put(TodoController.STATUS_KEY, Arrays.asList(new String[] {"complete"}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"desc"}));
     when(ctx.queryParamMap()).thenReturn(queryParams);
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `illegalIntegerString`.
-    when(ctx.queryParam(TodoController.AGE_KEY)).thenReturn(illegalIntegerString);
+    when(ctx.queryParam(TodoController.STATUS_KEY)).thenReturn("complete");
+    when(ctx.queryParam("sortorder")).thenReturn("desc");
 
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the `illegalIntegerString`.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(TodoController.AGE_KEY, Integer.class, illegalIntegerString);
-    when(ctx.queryParamAsClass(TodoController.AGE_KEY, Integer.class)).thenReturn(validator);
+    todoController.getTodos(ctx);
 
-    // This should now throw a `ValidationException` because
-    // our request has an age that can't be parsed to a number.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      todoController.getTodos(ctx);
-    });
-    // This digs into the returned `ValidationException` to get the underlying `Exception` that caused
-    // the validation to fail:
-    //   - `exception.getErrors` returns a `Map` that maps keys (like `AGE_KEY`) to lists of
-    //      validation errors for that key
-    //   - `.get(AGE_KEY)` returns a list of all the validation errors associated with `AGE_KEY`
-    //   - `.get(0)` assumes that the root cause is the first error in the list. In our case there
-    //     is only one root cause,
-    //     so that's safe, but you might be careful about that assumption in other contexts.
-    //   - `.exception()` gets the actually `Exception` value that was the underlying cause
-    Exception exceptionCause = exception.getErrors().get(TodoController.AGE_KEY).get(0).exception();
-    // The cause should have been a `NumberFormatException` (what is thrown when we try to parse "bad" as an integer).
-    assertEquals(NumberFormatException.class, exceptionCause.getClass());
-    // The message for that `NumberFOrmatException` should include the text it tried to parse as an integer,
-    // i.e., `"bad integer string"`.
-    assertTrue(exceptionCause.getMessage().contains(illegalIntegerString));
+    verify(ctx).json(todoArrayListCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+
+    for (Todo todo : todoArrayListCaptor.getValue()) {
+      assertEquals(true, todo.status);
+    }
   }
 
-  /**
-   * Test that if the todo sends a request with an illegal value in
-   * the age field (i.e., too big of a number)
-   * we get a reasonable error code back.
-   */
   @Test
-  void respondsAppropriatelyToTooLargeNumberAge() {
+  void canGetTodosWithStatusFalse() throws IOException {
     Map<String, List<String>> queryParams = new HashMap<>();
-    String overlyLargeAgeString = "151";
-    queryParams.put(TodoController.AGE_KEY, Arrays.asList(new String[] {overlyLargeAgeString}));
+    queryParams.put(TodoController.STATUS_KEY, Arrays.asList(new String[] {"incomplete"}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"desc"}));
     when(ctx.queryParamMap()).thenReturn(queryParams);
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `overlyLargeAgeString`.
-    when(ctx.queryParam(TodoController.AGE_KEY)).thenReturn(overlyLargeAgeString);
+    when(ctx.queryParam(TodoController.STATUS_KEY)).thenReturn("incomplete");
+    when(ctx.queryParam("sortorder")).thenReturn("desc");
 
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the integer value 37.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(TodoController.AGE_KEY, Integer.class, overlyLargeAgeString);
-    when(ctx.queryParamAsClass(TodoController.AGE_KEY, Integer.class)).thenReturn(validator);
+    todoController.getTodos(ctx);
 
-    // This should now throw a `ValidationException` because
-    // our request has an age that is larger than 150, which isn't allowed.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      todoController.getTodos(ctx);
+    verify(ctx).json(todoArrayListCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+
+    for (Todo todo : todoArrayListCaptor.getValue()) {
+      assertEquals(false, todo.status);
+    }
+  }
+
+  @Test
+  void canGetTodosWithStatusNeither() throws IOException {
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(TodoController.STATUS_KEY, Arrays.asList(new String[] {"abc"}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"desc"}));
+    when(ctx.queryParamMap()).thenReturn(queryParams);
+    when(ctx.queryParam(TodoController.STATUS_KEY)).thenReturn("abc");
+    when(ctx.queryParam("sortorder")).thenReturn("desc");
+
+    todoController.getTodos(ctx);
+
+    verify(ctx).json(todoArrayListCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+
+    for (Todo todo : todoArrayListCaptor.getValue()) {
+      assertEquals(false, todo.status);
+    }
+  }
+
+  @Test
+  void getUserWithExistentId() throws IOException {
+    String id = samsId.toHexString();
+    when(ctx.pathParam("id")).thenReturn(id);
+
+    todoController.getTodo(ctx);
+
+    verify(ctx).json(todoCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+    assertEquals("Sam", todoCaptor.getValue().owner);
+    assertEquals(samsId.toHexString(), todoCaptor.getValue()._id);
+  }
+
+  @Test
+  void getUserWithBadId() throws IOException {
+    when(ctx.pathParam("id")).thenReturn("bad");
+
+    Throwable exception = assertThrows(BadRequestResponse.class, () -> {
+      todoController.getTodo(ctx);
     });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error and confirm that it contains the problematic string, since that would be useful information
-    // for someone trying to debug a case where this validation fails.
-    String exceptionMessage = exception.getErrors().get(TodoController.AGE_KEY).get(0).getMessage();
-    // The message should be the message from our code under test, which should include the text we
-    //
-} tried to parse as an age, namely "151".
-    assertTrue(exceptionMessage.contains(overlyLargeAgeString));
+
+    assertEquals("The requested todo id wasn't a legal Mongo Object ID.", exception.getMessage());
+  }
+
+  @Test
+  void getUserWithNonexistentId() throws IOException {
+    String id = "588935f5c668650dc77df581";
+    when(ctx.pathParam("id")).thenReturn(id);
+
+    Throwable exception = assertThrows(NotFoundResponse.class, () -> {
+      todoController.getTodo(ctx);
+    });
+
+    assertEquals("The requested todo was not found", exception.getMessage());
+  }
+
+  @Test
+  void addsRoutes() {
+    Javalin mockServer = mock(Javalin.class);
+    todoController.addRoutes(mockServer);
+    verify(mockServer, Mockito.atLeast(2)).get(any(), any());
+  }
+
+  @Test
+  void canGetTodosWithBody() throws IOException {
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(TodoController.BODY_KEY, Arrays.asList(new String[]
+      {"Est ullamco consequat consectetur velit dolor qui pariatur proident dolor commodo ex."}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"desc"}));
+    when(ctx.queryParamMap()).thenReturn(queryParams);
+    when(ctx.queryParam(TodoController.BODY_KEY)).thenReturn(
+      "Est ullamco consequat consectetur velit dolor qui pariatur proident dolor commodo ex.");
+    when(ctx.queryParam("sortorder")).thenReturn("desc");
+
+    todoController.getTodos(ctx);
+
+    verify(ctx).json(todoArrayListCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+
+    for (Todo todo : todoArrayListCaptor.getValue()) {
+      assertEquals("Est ullamco consequat consectetur velit dolor qui pariatur proident dolor commodo ex.", todo.body);
+    }
+  }
+
+  @Test
+  void canLimitNumberOfTodos() throws IOException {
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(TodoController.LIMIT_KEY, Arrays.asList(new String[]{"1"}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"desc"}));
+    when(ctx.queryParamMap()).thenReturn(queryParams);
+    when(ctx.queryParam(TodoController.LIMIT_KEY)).thenReturn("1");
+    when(ctx.queryParam("sortorder")).thenReturn("desc");
+
+    todoController.getTodos(ctx);
+
+    verify(ctx).json(todoArrayListCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+
+    assertEquals(todoArrayListCaptor.getAllValues().size(), 1);
+  }
+
+  @Test
+  void canGetWithStatusAndOwner() throws IOException {
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(TodoController.STATUS_KEY, Arrays.asList(new String[] {"incomplete"}));
+    queryParams.put(TodoController.OWNER_KEY, Arrays.asList(new String[] {"Barry"}));
+    queryParams.put("sortorder", Arrays.asList(new String[] {"asc"}));
+    when(ctx.queryParamMap()).thenReturn(queryParams);
+    when(ctx.queryParam(TodoController.OWNER_KEY)).thenReturn("Barry");
+    when(ctx.queryParam(TodoController.STATUS_KEY)).thenReturn("incomplete");
+
+    todoController.getTodos(ctx);
+
+    verify(ctx).json(todoArrayListCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+
+    for (Todo todo : todoArrayListCaptor.getValue()) {
+      assertEquals("Barry", todo.owner);
+      assertEquals(false, todo.status);
+    }
   }
 }
