@@ -6,6 +6,8 @@ export interface Todo {
   category: TodoCategory;
 }
   
-  export type TodoCategory = 'groceries' | 'software design' | 'video games';
+export type TodoCategory = 'homework' | 'video games' | 'groceries' | 'software design';
+
   
 
+ 
