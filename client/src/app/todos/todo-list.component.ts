@@ -42,7 +42,7 @@ import { Todo } from './todo';
 })
 export class TodoListComponent {
   todoOwner = signal<string | undefined>(undefined);
-  todoStatus = signal<number | undefined>(undefined);
+  todoStatus = signal<boolean | undefined>(undefined);
   todoBody = signal<string | undefined>(undefined);
   todoCategory = signal<string | undefined>(undefined);
   todoSort = signal<string | undefined>(undefined);
@@ -55,44 +55,46 @@ export class TodoListComponent {
   /**
 
    *
-   * @param todoService the `UserService` used to get users from the server
+   * @param todoService the `TodoService` used to get Todos from the server
    * @param snackBar the `MatSnackBar` used to display feedback
    */
   constructor(private todoService: TodoService, private snackBar: MatSnackBar) {
-    // Nothing here – everything is in the injection parameters.
   }
 
 
   private todoOwner$ = toObservable(this.todoOwner);
   private todoBody$ = toObservable(this.todoBody);
+  private todoStatus$ = toObservable(this.todoStatus);
+  private todoCategory$ = toObservable(this.todoCategory);
+  private todoSort$ = toObservable(this.todoSort);
 
 
   serverFilteredTodos =
  
     toSignal(
-      combineLatest([this.todoOwner$, this.todoBody$]).pipe(
-        switchMap(([owner, body]) =>
+      combineLatest([this.todoOwner$, this.todoBody$, this.todoStatus$, this.todoCategory$, this.todoSort$]).pipe(
+        switchMap(([owner, body, status, category, sort]) =>
           this.todoService.getTodos({
             owner,
             body,
+            status,
+            category,
+            sort,
           })
         ),
         catchError((err) => {
-          if (err.error instanceof ErrorEvent) {
-            this.errMsg.set(
-              `Problem in the client – Error: ${err.error.message}`
-            );
-          } else {
+          if (!(err.error instanceof ErrorEvent)) {
+
             this.errMsg.set(
               `Problem contacting the server – Error Code: ${err.status}\nMessage: ${err.message}`
             );
           }
           this.snackBar.open(this.errMsg(), 'OK', { duration: 6000 });
-          // `catchError` needs to return the same type. `of` makes an observable of the same type, and makes the array still empty
+
           return of<Todo[]>([]);
         }),
-        // Tap allows you to perform side effects if necessary
         tap(() => {
+
         })
       )
     );

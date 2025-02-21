@@ -47,31 +47,17 @@ describe('Todo list', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [COMMON_IMPORTS, TodoListComponent],
-      // providers:    [ UserService ]  // NO! Don't provide the real service!
-      // Provide a test-double instead
       providers: [{ provide: TodoService, useValue: new MockTodoService() }],
     });
   });
 
-  // This constructs the `userList` (declared
-  // above) that will be used throughout the tests.
   beforeEach(waitForAsync(() => {
-    // Compile all the components in the test bed
-    // so that everything's ready to go.
+ 
     TestBed.compileComponents().then(() => {
-      /* Create a fixture of the UserListComponent. That
-       * allows us to get an instance of the component
-       * (userList, below) that we can control in
-       * the tests.
-       */
+
       fixture = TestBed.createComponent(TodoListComponent);
       todoList = fixture.componentInstance;
-      /* Tells Angular to sync the data bindings between
-       * the model and the DOM. This ensures, e.g., that the
-       * `userList` component actually requests the list
-       * of users from the `MockUserService` so that it's
-       * up to date before we start running tests on it.
-       */
+
       fixture.detectChanges();
     });
   }));
@@ -89,28 +75,23 @@ describe('Todo list', () => {
   it("contain a owner named 'Barry'", () => {
     expect(
       todoList.serverFilteredTodos().some((todo:Todo) => todo.owner  === 'Barry')
-    ).toBe(false);
-  });
-
-  it("doesn't contain a owner named 'Blanche'", () => {
-    expect(
-      todoList.serverFilteredTodos().some((todo: Todo) => todo.owner === 'Blanche')
-    ).toBe(false);
-  });
-
-  it('has two todos  that are true', () => {
-    expect(
-      todoList.serverFilteredTodos().some((todo: Todo) => todo.body === 'commodo')
     ).toBe(true);
+  });
+
+  it("doesn't contain a todo owner named 'Money'", () => {
+    expect(
+      todoList.serverFilteredTodos().some((todo: Todo) => todo.owner === 'Money')
+    ).toBe(false);
+  });
+
+  it("doesn't contain a todo owner named 'Santa'", () => {
+    expect(
+      todoList.serverFilteredTodos().some((todo: Todo) => todo.owner === 'Santa')
+    ).toBe(false);
   });
 });
 
-/*
- * This test is a little odd, but illustrates how we can use stubs
- * to create mock objects (a service in this case) that be used for
- * testing. Here we set up the mock UserService (userServiceStub) so that
- * _always_ fails (throws an exception) when you request a set of users.
- */
+
 describe('Misbehaving Todo List', () => {
   let todoList: TodoListComponent;
   let fixture: ComponentFixture<TodoListComponent>;
@@ -121,7 +102,6 @@ describe('Misbehaving Todo List', () => {
   };
 
   beforeEach(() => {
-    // stub UserService for test purposes
     todoServiceStub = {
       getTodos: () =>
         new Observable((observer) => {
@@ -132,13 +112,11 @@ describe('Misbehaving Todo List', () => {
 
     TestBed.configureTestingModule({
       imports: [COMMON_IMPORTS, TodoListComponent],
-      // providers:    [ UserService ]  // NO! Don't provide the real service!
-      // Provide a test-double instead
       providers: [{ provide: TodoService, useValue: todoServiceStub }],
     });
   });
 
-  // Construct the `userList` used for the testing in the `it` statement
+  // Construct the `TodoList` used for the testing in the `it` statement
   // below.
   beforeEach(waitForAsync(() => {
     TestBed.compileComponents().then(() => {
@@ -149,14 +127,10 @@ describe('Misbehaving Todo List', () => {
   }));
 
   it("generates an error if we don't set up a TodoListService", () => {
-    // If the service fails, we expect the `serverFilteredUsers` signal to
-    // be an empty array of users.
     expect(todoList.serverFilteredTodos())
       .withContext("service can't give values to the list if it's not there")
       .toEqual([]);
-    // We also expect the `errMsg` signal to contain the "Problem contacting…"
-    // error message. (It's arguably a bit fragile to expect something specific
-    // like this; maybe we just want to expect it to be non-empty?)
+
     expect(todoList.errMsg())
       .withContext('the error message will be')
       .toContain('Problem contacting the server – Error Code:');

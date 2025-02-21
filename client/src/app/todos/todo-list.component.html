@@ -3,19 +3,18 @@
 
     <mat-card class="search-card">
       <mat-card-header>
-        <mat-card-title class="todo-list-title">Todos</mat-card-title>
+        <mat-card-title data-test="todoListTitle">Todos</mat-card-title>
       </mat-card-header>
       <mat-card-content>
 
         <div class="flex-row gap-8 flex-wrap">
-          <!-- Examples of filtering in Angular -->
 
           <mat-form-field class="input-field">
             <mat-label>Owner</mat-label>
-            <input matInput data-test="todoOwnerInput" placeholder="Filter by owner"
-              [(ngModel)]="todoOwner">
-            <mat-hint>Filtered on client</mat-hint>
-          </mat-form-field>
+          <input matInput data-test="todoOwnerInput" placeholder="Filter by owner"
+          [(ngModel)]="todoOwner">
+           <mat-hint>Filtered on client</mat-hint>
+       </mat-form-field>
 
           <mat-form-field class="input-field">
             <mat-label>Body</mat-label>
@@ -26,7 +25,6 @@
         </div>
 
         <div class="flex-row gap-8 flex-wrap">
-          <!-- Examples of filtering on the server -->
 
           <mat-form-field class="input-field">
             <mat-label>Status</mat-label>
@@ -40,10 +38,10 @@
 
           <mat-form-field class="input-field">
             <mat-label>Category</mat-label>
-            <mat-select [(ngModel)]="todoCategory" data-test="todoCategorySelect">
+            <mat-select [(ngModel)]="todoCategory" data-test="todoCategoryFilter">
               <mat-option>--</mat-option>
-              <mat-option value="video games">Video matRipple [matRippleUnbounded]="true" [matRippleCentered]="true" [matRippleRadius]=100 Games</mat-option>
-              <mat-option value="groceries">Groceries</mat-option>
+              <mat-option value="video games">Video Games</mat-option>
+       <mat-option value="groceries">Groceries</mat-option>
               <mat-option value="software design">Software Design</mat-option>
               <mat-option value="homework">Homework</mat-option>
             </mat-select>
@@ -52,16 +50,15 @@
         </div>
 
         <div class="flex-row gap-8 flex-wrap">
-          <!-- Examples of filtering on the server -->
 
           <mat-form-field class="input-field">
             <mat-label>Sort By</mat-label>
             <mat-select [(ngModel)]="todoSort" data-test="todoSortSelect">
-              <mat-option>--</mat-option>
+       <mat-option>--</mat-option>
               <mat-option value="owner">Owner</mat-option>
-              <mat-option value="body">Body</mat-option>
+        <mat-option value="body">Body</mat-option>
               <mat-option value="status">Status</mat-option>
-              <mat-option value="category">Category</mat-option>
+        <mat-option value="category">Category</mat-option>
             </mat-select>
             <mat-hint>Filtered on server</mat-hint>
           </mat-form-field>
@@ -78,9 +75,8 @@
         <br>
           <div class="flex-row gap-8 flex-wrap">
             <label for="viewType">View type: </label>
-            <mat-radio-group aria-label="View type" [(ngModel)]="viewType" data-test="viewTypeRadio">
-              <mat-radio-button value="card">Card</mat-radio-button>
-              <mat-radio-button value="list">List</mat-radio-button>
+            <mat-radio-group aria-label="View type" [(ngModel)]="viewType" data-test="viewTypeRadio">      <mat-radio-button value="card">Card</mat-radio-button>
+    <mat-radio-button value="list">List</mat-radio-button>
             </mat-radio-group>
           </div>
 
@@ -92,10 +88,8 @@
   <div class="flex-row">
     @if (serverFilteredTodos()) {
       <div class="flex-1" >
-        <!-- Switch between card and list view based on the viewType variable, set above in the mar-radio-group -->
         <div>
           @switch (viewType()) {
-            <!-- Card grid view -->
             @case ('card') {
               <div class="todo-cards-container flex-row gap-8 flex-wrap">
                 @for (todo of filteredTodos(); track todo._id) {
@@ -103,19 +97,18 @@
                 }
               </div>
             }
-            <!-- List view -->
             @case ('list') {
               <mat-card>
                 <mat-card-content>
                   <mat-nav-list class="todo-nav-list">
                     <h3 mat-subheader>Todos</h3>
-                    @for (todo of filteredTodos(); track todo._id) {
+         @for (todo of filteredTodos(); track todo._id) {
                       <a mat-list-item [routerLink]="['/todos', todo._id]" class="todo-list-item">
-                        <span matListItemTitle mat-line class="todo-list-owner"> {{todo.owner}} </span>
+          <span matListItemTitle mat-line class="todo-list-owner"> {{todo.owner}} </span>
                         <span matListItemLine class="todo-list-status"> {{todo.status}} </span>
                       </a>
-                    }
-                  </mat-nav-list>
+          }
+             </mat-nav-list>
                 </mat-card-content>
               </mat-card>
             }
