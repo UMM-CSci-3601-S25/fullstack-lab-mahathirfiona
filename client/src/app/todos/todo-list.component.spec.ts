@@ -80,29 +80,28 @@ describe('Todo list', () => {
     expect(todoList.serverFilteredTodos().length).toBe(3);
   });
 
-  it("contains a todo named 'Chris'", () => {
+  it("contains a owner named 'Fry'", () => {
     expect(
-      todoList.serverFilteredTOdos().some((todo: Todo) => todo.owner === 'Chris')
+      todoList.serverFilteredTodos().some((todo: Todo) => todo.owner === 'Fry')
     ).toBe(true);
   });
 
-  it("contain a todo named 'Jamie'", () => {
+  it("contain a owner named 'Barry'", () => {
     expect(
-      todoList.serverFilteredTodos().some((todo:Todo) => todo.owner  === 'Jamie')
-    ).toBe(true);
-  });
-
-  it("doesn't contain a todo named 'Santa'", () => {
-    expect(
-      todoList.serverFilteredUTodos().some((todo: Todo) => todo.owner=== 'Santa')
+      todoList.serverFilteredTodos().some((todo:Todo) => todo.owner  === 'Barry')
     ).toBe(false);
   });
 
-  it('has two todos  that are 37 years old', () => {
+  it("doesn't contain a owner named 'Blanche'", () => {
     expect(
-      todoList.serverFilteredTodos().filter((todo: Todo) => todo. === 37)
-        .length
-    ).toBe(2);
+      todoList.serverFilteredTodos().some((todo: Todo) => todo.owner === 'Blanche')
+    ).toBe(false);
+  });
+
+  it('has two todos  that are true', () => {
+    expect(
+      todoList.serverFilteredTodos().some((todo: Todo) => todo.body === 'commodo')
+    ).toBe(true);
   });
 });
 
@@ -163,3 +162,4 @@ describe('Misbehaving Todo List', () => {
       .toContain('Problem contacting the server – Error Code:');
   });
 });
+
