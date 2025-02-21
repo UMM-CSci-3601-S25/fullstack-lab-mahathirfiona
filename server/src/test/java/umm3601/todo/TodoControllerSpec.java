@@ -168,7 +168,7 @@ class TodoControllerSpec {
     todoController.getTodos(ctx);
 
     // We are going to capture an argument to a function, and the type of
-    // that argument will be of type ArrayList<Todo> (we said so earlier
+    // that argument will be of type Arror Code: 404 Message: Http failure response for http://localhost:4200/api/users: 404 Not Found rrayList<Todo> (we said so earlier
     // using a Mockito annotation like this):
     // @Captor
     // private ArgumentCaptor<ArrayList<Todo>> todoArrayListCaptor;
