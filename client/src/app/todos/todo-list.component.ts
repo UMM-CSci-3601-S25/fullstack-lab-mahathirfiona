@@ -12,11 +12,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
+import {MatRippleModule} from '@angular/material/core';
+import {MatSliderModule} from '@angular/material/slider';
 import { catchError, combineLatest, of, switchMap, tap } from 'rxjs';
+import { Todo, TodoCategory } from './todo';
 import { TodoCardComponent } from './todo-card.component';
 import { TodoService } from './todo.service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Todo } from './todo';
 
 
 @Component({
@@ -38,13 +40,15 @@ import { Todo } from './todo';
     MatButtonModule,
     MatTooltipModule,
     MatIconModule,
+    MatRippleModule,
+    MatSliderModule,
   ],
 })
 export class TodoListComponent {
   todoOwner = signal<string | undefined>(undefined);
   todoStatus = signal<boolean | undefined>(undefined);
+  todoCategory = signal<TodoCategory | undefined>(undefined);
   todoBody = signal<string | undefined>(undefined);
-  todoCategory = signal<string | undefined>(undefined);
   todoSort = signal<string | undefined>(undefined);
   todoLimit = signal<string | undefined>(undefined);
 
@@ -52,45 +56,41 @@ export class TodoListComponent {
 
   errMsg = signal<string | undefined>(undefined);
 
-  /**
 
-   *
-   * @param todoService the `TodoService` used to get Todos from the server
-   * @param snackBar the `MatSnackBar` used to display feedback
-   */
   constructor(private todoService: TodoService, private snackBar: MatSnackBar) {
   }
 
-
-  private todoOwner$ = toObservable(this.todoOwner);
-  private todoBody$ = toObservable(this.todoBody);
-  private todoStatus$ = toObservable(this.todoStatus);
   private todoCategory$ = toObservable(this.todoCategory);
+  private todoStatus$ = toObservable(this.todoStatus);
   private todoSort$ = toObservable(this.todoSort);
+  private todoLimit$ = toObservable(this.todoLimit);
 
 
   serverFilteredTodos =
- 
+
     toSignal(
-      combineLatest([this.todoOwner$, this.todoBody$, this.todoStatus$, this.todoCategory$, this.todoSort$]).pipe(
-        switchMap(([owner, body, status, category, sort]) =>
+      combineLatest([this.todoCategory$, this.todoStatus$, this.todoSort$, this.todoLimit$]).pipe(
+
+        switchMap(([category, status, sort, limit]) =>
           this.todoService.getTodos({
-            owner,
-            body,
-            status,
             category,
+            status,
             sort,
+            limit,
           })
         ),
-        catchError((err) => {
-          if (!(err.error instanceof ErrorEvent)) {
 
+        catchError((err) => {
+          if (err.error instanceof ErrorEvent) {
+            this.errMsg.set(
+              `Problem in the client – Error: ${err.error.message}`
+            );
+          } else {
             this.errMsg.set(
               `Problem contacting the server – Error Code: ${err.status}\nMessage: ${err.message}`
             );
           }
           this.snackBar.open(this.errMsg(), 'OK', { duration: 6000 });
-
           return of<Todo[]>([]);
         }),
         tap(() => {
@@ -99,10 +99,11 @@ export class TodoListComponent {
       )
     );
 
+
   filteredTodos = computed(() => {
     const serverFilteredTodos = this.serverFilteredTodos();
     return this.todoService.filterTodos(serverFilteredTodos, {
-      owner : this.todoOwner(),
+      owner: this.todoOwner(),
       body: this.todoBody(),
     });
   });

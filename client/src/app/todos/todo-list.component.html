@@ -11,14 +11,16 @@
 
           <mat-form-field class="input-field">
             <mat-label>Owner</mat-label>
-          <input matInput data-test="todoOwnerInput" placeholder="Filter by owner"
+          <input matInput data-test="todoOwnerFilter" 
+          placeholder="Filter by owner"
           [(ngModel)]="todoOwner">
            <mat-hint>Filtered on client</mat-hint>
        </mat-form-field>
 
           <mat-form-field class="input-field">
             <mat-label>Body</mat-label>
-            <input matInput data-test="todoBodySelect" placeholder="Filter by body"
+            <input matInput data-test="todoBodyFilter"
+             placeholder="Filter by body"
              [(ngModel)]="todoBody">
             <mat-hint>Filtered on client</mat-hint>
           </mat-form-field>
@@ -65,8 +67,8 @@
 
           <mat-form-field class="input-field">
             <mat-label>Limit</mat-label>
-            <input matInput data-test="todoLimitInput" type="number" placeholder="Limit number of todos"
-              min="1" max="200" [(ngModel)]="todoLimit">
+            <input matInput data-test="todo" type="number" placeholder="Limit number of todos"
+              min="1" max="300" [(ngModel)]="todoLimit">
             <mat-hint>Filtered on server</mat-hint>
           </mat-form-field>
         </div>
