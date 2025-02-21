@@ -1,9 +1,9 @@
-.user-cards-container {
+.todo-cards-container {
     width: 100%;
     position: relative;
   }
   
-  .user-card {
+  .todo-card {
     margin-bottom: 10px;
     flex: 1 1 280px;
   }
@@ -16,7 +16,7 @@
     margin: 0 12px;
   }
   
-  .add-user-fab {
+  .add-todo-fab {
     position: fixed;
     bottom: 15px;
     right: 30px;
